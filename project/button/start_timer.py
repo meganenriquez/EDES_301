@@ -307,11 +307,11 @@ class Button():
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-
     print("Button Test")
 
     # Create instantiation of the button
-    button = Button("P2_2")
+    button1 = Button("P2_2")
+    button2 = Button("P2_4")
     
     # Create functions to test the callback functions
     def pressed():
@@ -336,35 +336,35 @@ if __name__ == '__main__':
     try:
         # Check if the button is pressed
         print("Is the button pressed?")
-        print("    {0}".format(button.is_pressed()))
+        print("    {0}".format(button1.is_pressed()))
 
         print("Press and hold the button.")
         time.sleep(4)
         
         # Check if the button is pressed
         print("Is the button pressed?")
-        print("    {0}".format(button.is_pressed()))
+        print("    {0}".format(button1.is_pressed()))
         
         print("Release the button.")
         time.sleep(4)
         
         print("Waiting for button press ...")
-        button.wait_for_press()
-        print("    Button pressed for {0} seconds. ".format(button.get_last_press_duration()))
+        button1.wait_for_press()
+        print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
         
         print("Setting callback functions ... ")
-        button.set_pressed_callback(pressed)
-        button.set_unpressed_callback(unpressed)
-        button.set_on_press_callback(on_press)
-        button.set_on_release_callback(on_release)
+        button1.set_pressed_callback(pressed)
+        button1.set_unpressed_callback(unpressed)
+        button1.set_on_press_callback(on_press)
+        button1.set_on_release_callback(on_release)
         
         print("Waiting for button press with callback functions ...")
-        value = button.wait_for_press()
-        print("    Button pressed for {0} seconds. ".format(button.get_last_press_duration()))
-        print("    Button pressed callback return value    = {0} ".format(button.get_pressed_callback_value()))
-        print("    Button unpressed callback return value  = {0} ".format(button.get_unpressed_callback_value()))
-        print("    Button on press callback return value   = {0} ".format(button.get_on_press_callback_value()))
-        print("    Button on release callback return value = {0} ".format(button.get_on_release_callback_value()))        
+        value = button1.wait_for_press()
+        print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
+        print("    Button pressed callback return value    = {0} ".format(button1.get_pressed_callback_value()))
+        print("    Button unpressed callback return value  = {0} ".format(button1.get_unpressed_callback_value()))
+        print("    Button on press callback return value   = {0} ".format(button1.get_on_press_callback_value()))
+        print("    Button on release callback return value = {0} ".format(button1.get_on_release_callback_value()))        
         
     except KeyboardInterrupt:
         pass
