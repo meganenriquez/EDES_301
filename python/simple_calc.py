@@ -184,6 +184,8 @@ if __name__ == "__main__":
         
         print(func(number1, number2))
         
+        
+# if the name is simple_calc, then it's run on another version of python        
 if __name__ == "simple_calc":
 
     # NOTE - Need to add main calculator functionality:
@@ -195,7 +197,7 @@ if __name__ == "simple_calc":
     # NOTE - Use "pass" statements to allow code to be run without having to 
     # NOTE - fill out the contents.  This pass statement should be removed    
     while True:
-        (number1, number2, func) = v2_get_user_input()
+        (number1, number2, func) = v2_get_user_input() # for python 2
         
         if (number1 is None) or (number2 is None) or (func is None):
             print("Invalid Input")
