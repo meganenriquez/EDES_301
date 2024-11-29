@@ -75,7 +75,11 @@ operators = {
     "+" : operator.add,
     "-" : operator.sub,
     "*" : operator.mul,
-    "/" : operator.truediv
+    "/" : operator.truediv,
+    ">>" : operator.rshift,
+    "<<" : operator.lshift,
+    "%" : operator.mod,
+    "**" : operator.pow
 }
 
 
@@ -92,10 +96,18 @@ def get_user_input():
     # NOTE - Use "try"/"except" statements to allow code to handle errors gracefully.      
     try:
         # NOTE - Use "pass" statements to allow code to be run without having to 
-        # NOTE - fill out the contents.  This pass statement should be removed    
+        # NOTE - fill out the contents.  This pass statement should be removed
+        # made input() into raw_input to be compatible for python 2
+
         number1  = float(input("Input first number:  "))
         number2  = float(input("Input second number: "))
-        function = input("Input function (+, -, *, /): ")
+        function = input("Input function (+, -, *, /, >>, <<, %, **): ")
+        
+        
+        # shift functions need to be integers because they use binary 
+        if function == "<<" or function == ">>":
+            number1 = int(number1)
+            number2 = int(number2)
         
         func = operators[function]
         
@@ -107,6 +119,36 @@ def get_user_input():
         return (None, None, None)
 
 # End def
+
+def v2_get_user_input():
+    """ Get input from the user for a python 2 version.
+        Returns tuple:  (number, number, function) or 
+                        (None, None, None) if inputs invalid
+    """
+    # NOTE - Use "try"/"except" statements to allow code to handle errors gracefully.      
+    try:
+        # NOTE - Use "pass" statements to allow code to be run without having to 
+        # NOTE - fill out the contents.  This pass statement should be removed
+        # made input() into raw_input to be compatible for python 2
+
+        number1  = float(raw_input("Input first number:  "))
+        number2  = float(raw_input("Input second number: "))
+        function = raw_input("Input function (+, -, *, /, >>, <<, %, **): ")
+        
+        
+        # shift functions need to be integers because they use binary 
+        if function == "<<" or function == ">>":
+            number1 = int(number1)
+            number2 = int(number2)
+        
+        func = operators[function]
+        
+        return (number1, number2, func)
+        
+        # NOTE - User input is generally returned as a string and must be translated.
+    except:
+        print("Invalid Input")
+        return (None, None, None)
 
 
 
@@ -141,4 +183,24 @@ if __name__ == "__main__":
             break
         
         print(func(number1, number2))
+        
+if __name__ == "simple_calc":
+
+    # NOTE - Need to add main calculator functionality:
+    # NOTE -   - Use a loop construct to repeat the operation
+    # NOTE -   - Get the input from the user (i.e. use function created above)    
+    # NOTE -   - Check that all inputs are valid (exit the program if inputs invalid)
+    # NOTE -   - Execute the function on the numbers and print the results
+
+    # NOTE - Use "pass" statements to allow code to be run without having to 
+    # NOTE - fill out the contents.  This pass statement should be removed    
+    while True:
+        (number1, number2, func) = v2_get_user_input()
+        
+        if (number1 is None) or (number2 is None) or (func is None):
+            print("Invalid Input")
+            break
+        
+        print(func(number1, number2))
+
 
