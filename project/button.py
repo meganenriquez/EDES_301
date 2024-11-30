@@ -311,7 +311,7 @@ if __name__ == '__main__':
     print("Button Test")
 
     # Create instantiation of the button
-    button = Button("P2_2")
+    button = Button("P2_8")
     
     # Create functions to test the callback functions
     def pressed():

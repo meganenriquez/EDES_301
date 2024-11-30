@@ -121,8 +121,7 @@ if __name__ == '__main__':
     
     print("Play tone")
     
-    buzzer.play(440, 1.0, False)      # Play 440Hz for 1 second
-    time.sleep(1.0)
+
     buzzer.play(880, 1.0, True)       # Play 440Hz for 1 second
     time.sleep(1.0)   
 

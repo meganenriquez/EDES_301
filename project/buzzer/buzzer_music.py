@@ -157,6 +157,10 @@ NOTE_DS8 = 4978
 #
 # ------------------------------------------------------------------------
 SONGS    = [
+    { TITLE  : "Mary Had a Little Lambb",
+      NOTES  : [(NOTE_E1,  1, True), (NOTE_D1, 1, True), (NOTE_C1, 1, True), (NOTE_D1,  1, True),
+                (NOTE_E1, 1, True), (NOTE_E1,  1, True), (NOTE_E1, 1, True), (NOTE_D1,  1, True )]
+    },
     { TITLE  : "Uncover Secret from The Legend of Zelda",
       NOTES  : [(NOTE_G5,  0.150, False), (NOTE_FS5, 0.150, False), (NOTE_DS5, 0.150, False), (NOTE_A4,  0.150, False),
                 (NOTE_GS4, 0.150, False), (NOTE_E5,  0.150, False), (NOTE_GS5, 0.150, False), (NOTE_C6,  0.150, True )]
@@ -331,9 +335,11 @@ if __name__ == '__main__':
     print("Buzzer Music Test")
     
     try:
-        for i in range(music.get_song_list_len()):
-            print("Play Song {0}".format(i))
-            music.play_song_from_list(i, zero_index=True)
+        print("Play Song {0}".format(0))
+        music.play_song_from_list(0, zero_index=True)
+        # for i in range(music.get_song_list_len()):
+        #     print("Play Song {0}".format(i))
+        #     music.play_song_from_list(i, zero_index=True)
     except KeyBoardException:
         pass
         

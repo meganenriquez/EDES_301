@@ -112,6 +112,15 @@ LOW           = GPIO.LOW
 # ------------------------------------------------------------------------
 # Functions / Classes
 # ------------------------------------------------------------------------
+import Adafruit_BBIO.PWM as PWM
+import time
+LED = 'P2_3'
+step = 10       # Step size
+min =  0        # dimmest value
+max =  100      # brightest value
+brightness = min # Current brightness;
+ 
+PWM.start(LED, brightness)
 
 class Button():
     """ Button Class """
@@ -308,66 +317,99 @@ class Button():
 
 if __name__ == '__main__':
     print("Button Test")
-
+    
     # Create instantiation of the button
     button1 = Button("P2_2")
     button2 = Button("P2_4")
     
     # Create functions to test the callback functions
-    def pressed():
-        print("  Button pressed")
-    # End def
     
-    def unpressed():
-        print("  Button not pressed")
-    # End def
+    starting_timer = 0
+    start_LED = 0
 
-    def on_press():
-        print("  On Button press")
-        return 3
-    # End def
+    while(1):
+        if button2.is_pressed():
+            starting_timer = not starting_timer
+            print(starting_timer)
+            time.sleep(0.25)
+            
+        if button1.is_pressed():
+            print("button1 pressed")
+            start_LED = 1;
+            PWM.set_duty_cycle(LED, 100)
+            time.sleep(0.25)
+            PWM.set_duty_cycle(LED, brightness)
+            brightness += step
+            if(brightness >= max or brightness <= min):
+                step = -1 * step
+                time.sleep(0.1)
+            button1.wait_for_press()
+            print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
+            time.sleep(0.25)
+            
+        if not button1.is_pressed():
+            print("button1 not pressed")
+            start_LED = 0;
+            PWM.set_duty_cycle(LED, 0)
+            time.sleep(0.1)
+        
+ 
+    
+    
+    # def pressed():
+    #     print("  Button pressed")
+    # # End def
+    
+    # def unpressed():
+    #     print("  Button not pressed")
+    # # End def
 
-    def on_release():
-        print("  On Button release")
-        return 4
-    # End def    
+    # def on_press():
+    #     print("  On Button press")
+    #     return 3
+    # # End def
+
+    # def on_release():
+    #     print("  On Button release")
+    #     return 4
+    # # End def    
 
     # Use a Keyboard Interrupt (i.e. "Ctrl-C") to exit the test
-    try:
-        # Check if the button is pressed
-        print("Is the button pressed?")
-        print("    {0}".format(button1.is_pressed()))
+    # try:
+    #     # Check if the button is pressed
+    #     print("Is the button pressed?")
+    #     print("    {0}".format(button1.is_pressed()))
 
-        print("Press and hold the button.")
-        time.sleep(4)
+    #     print("Press and hold the button.")
+    #     time.sleep(4)
         
-        # Check if the button is pressed
-        print("Is the button pressed?")
-        print("    {0}".format(button1.is_pressed()))
+    #     # Check if the button is pressed
+    #     print("Is the button pressed?")
+    #     print("    {0}".format(button1.is_pressed()))
         
-        print("Release the button.")
-        time.sleep(4)
+    #     print("Release the button.")
+    #     time.sleep(4)
         
-        print("Waiting for button press ...")
-        button1.wait_for_press()
-        print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
+    #     print("Waiting for button press ...")
+    #     button1.wait_for_press()
+    #     print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
         
-        print("Setting callback functions ... ")
-        button1.set_pressed_callback(pressed)
-        button1.set_unpressed_callback(unpressed)
-        button1.set_on_press_callback(on_press)
-        button1.set_on_release_callback(on_release)
+    #     print("Setting callback functions ... ")
+    #     button1.set_pressed_callback(pressed)
+    #     button1.set_unpressed_callback(unpressed)
+    #     button1.set_on_press_callback(on_press)
+    #     button1.set_on_release_callback(on_release)
         
-        print("Waiting for button press with callback functions ...")
-        value = button1.wait_for_press()
-        print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
-        print("    Button pressed callback return value    = {0} ".format(button1.get_pressed_callback_value()))
-        print("    Button unpressed callback return value  = {0} ".format(button1.get_unpressed_callback_value()))
-        print("    Button on press callback return value   = {0} ".format(button1.get_on_press_callback_value()))
-        print("    Button on release callback return value = {0} ".format(button1.get_on_release_callback_value()))        
+    #     print("Waiting for button press with callback functions ...")
+    #     value = button1.wait_for_press()
+    #     print("    Button pressed for {0} seconds. ".format(button1.get_last_press_duration()))
+    #     print("    Button pressed callback return value    = {0} ".format(button1.get_pressed_callback_value()))
+    #     print("    Button unpressed callback return value  = {0} ".format(button1.get_unpressed_callback_value()))
+    #     print("    Button on press callback return value   = {0} ".format(button1.get_on_press_callback_value()))
+    #     print("    Button on release callback return value = {0} ".format(button1.get_on_release_callback_value()))        
         
-    except KeyboardInterrupt:
-        pass
+    # except KeyboardInterrupt:
+    #     pass
 
     print("Test Complete")
 

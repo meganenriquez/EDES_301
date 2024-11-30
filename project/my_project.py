@@ -47,6 +47,18 @@ Software API:
 """
 import Adafruit_BBIO.ADC as ADC
 import os
+import time
+import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.PWM as PWM
+
+
+# ------------------------------------------------------------------------
+# Functions / Classes
+# ------------------------------------------------------------------------
+from timer import HT16K33
+from potentiometer import Potentiometer
+from button import Button
+from buzzer import Buzzer
 
 
 # ------------------------------------------------------------------------
@@ -56,9 +68,9 @@ import os
 # See https://en.wikipedia.org/wiki/Seven-segment_display for reference 
 
 HEX_DIGITS                  = [0x3f, 0x06, 0x5b, 0x4f,     # 0, 1, 2, 3
-                               0x66, 0x6d, 0x7d, 0x07,     # 4, 5, 6, 7
-                               0x7f, 0x6f, 0x77, 0x7c,     # 8, 9, A, b
-                               0x39, 0x5e, 0x79, 0x71]     # C, d, E, F
+                              0x66, 0x6d, 0x7d, 0x07,     # 4, 5, 6, 7
+                              0x7f, 0x6f, 0x77, 0x7c,     # 8, 9, A, b
+                              0x39, 0x5e, 0x79, 0x71]     # C, d, E, F
 
 LETTERS                     = { "a" : 0x77, "A" : 0x77,    # "A"
                                 "b" : 0x7c, "B" : 0x7c,    # "b"
@@ -126,162 +138,19 @@ HT16K33_MAX_VALUE           = 9999
 
 
 # ------------------------------------------------------------------------
-# Functions / Classes
+# Constants
 # ------------------------------------------------------------------------
-class HT16K33():
-    """ Class to manage a HT16K33 I2C display """
-    bus     = None
-    address = None
-    command = None
-    
-    def __init__(self, bus, address=0x70, blink=HT16K33_BLINK_OFF, brightness=HT16K33_BRIGHTNESS_HIGHEST):
-        """ Initialize class variables; Set up display; Set display to blank """
-        
-        # Initialize class variables
-        self.bus     = bus
-        self.address = address
-        self.command = "/usr/sbin/i2cset -y {0} {1}".format(bus, address)
-
-        # Set up display        
-        self.setup(blink, brightness)
-        
-        # Set display to blank
-        self.blank()
-    
-    # End def
-    
-    
-    def setup(self, blink, brightness):
-        """Initialize the display itself"""
-        # i2cset -y 1 0x70 0x21
-        os.system("{0} {1}".format(self.command, (HT16K33_SYSTEM_SETUP | HT16K33_OSCILLATOR)))
-        # i2cset -y 1 0x70 0x81
-        os.system("{0} {1}".format(self.command, (HT16K33_BLINK_CMD | blink | HT16K33_BLINK_DISPLAYON)))
-        # i2cset -y 1 0x70 0xEF
-        os.system("{0} {1}".format(self.command, (HT16K33_BRIGHTNESS_CMD | brightness)))
-
-    # End def    
-
-
-    def encode(self, data, double_point=False):
-        """Encode data to TM1637 format.
-        
-        This function will convert the data from decimal to the TM1637 data fromt
-        
-        :param value: Value must be between 0 and 15
-        
-        Will throw a ValueError if number is not between 0 and 15.
-        """
-        ret_val = 0
-        
-        try:
-            if (data != CLEAR_DIGIT):
-                if double_point:
-                    ret_val = HEX_DIGITS[data] + POINT_VALUE
-                else:
-                    ret_val = HEX_DIGITS[data]
-        except:
-            raise ValueError("Digit value must be between 0 and 15.")
-    
-        return ret_val
-
-    # End def
-
-
-    def set_digit(self, digit_number, data, double_point=False):
-        """Update the given digit of the display."""
-        os.system("{0} {1} {2}".format(self.command, DIGIT_ADDR[digit_number], self.encode(data, double_point)))    
-
-    # End def
-
-
-    def set_digit_raw(self, digit_number, data, double_point=False):
-        """Update the given digit of the display using raw data value"""
-        os.system("{0} {1} {2}".format(self.command, DIGIT_ADDR[digit_number], data))    
-
-    # End def
-
-
-    def set_colon(self, enable):
-        """Set the colon on the display."""
-        if enable:
-            os.system("{0} {1} {2}".format(self.command, COLON_ADDR, 0x02))
-        else:
-            os.system("{0} {1} {2}".format(self.command, COLON_ADDR, 0x00))
-
-    # End def        
-
-
-    def blank(self):
-        """Clear the display to read nothing"""
-        self.set_colon(False)
-
-        self.set_digit_raw(3, 0x00)
-        self.set_digit_raw(2, 0x00)
-        self.set_digit_raw(1, 0x00)
-        self.set_digit_raw(0, 0x00)
-
-    # End def
-
-
-    def clear(self):
-        """Clear the display to read '0000'"""
-        self.set_colon(False)
-        self.update(0)
-
-    # End def
-
-
-    def update(self, value):
-        """Update the value on the display.  
-        
-        This function will clear the display and then set the appropriate digits
-        
-        :param value: Value must be between 0 and 9999.
-        
-        Will throw a ValueError if number is not between 0 and 9999.
-        """
-        if ((value < 0) or (value > 9999)):
-            raise ValueError("Value is not between 0 and 9999")
-        
-        self.set_digit(3, (value % 10))
-        self.set_digit(2, (value // 10) % 10)
-        self.set_digit(1, (value // 100) % 10)
-        self.set_digit(0, (value // 1000) % 10)
-
-    # End def
-    
-    def text(self, value):
-        """ Update the value on the display with text
-        
-        :param value:  Value must have between 1 and 4 characters
-        
-        Will throw a ValueError if there are not the appropriate number of 
-        characters or if characters are used that are not supported.
-        """
-        if ((len(value) < 1) or (len(value) > 4)):
-            raise ValueError("Must have between 1 and 4 characters")        
-        
-        # Clear the display
-        self.blank()
-
-        # Set the display to the correct characters        
-        for i, char in enumerate(value):
-            try:
-                char_value = LETTERS[char]
-                self.set_digit_raw(i, char_value)
-            except:
-                raise ValueError("Character {0} not supported".format(char))
-
-# End class
+MIN_VALUE     = 0
+MAX_VALUE     = 4095
 
 
 # ------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------
 
-MIN_VALUE     = 0
-MAX_VALUE     = 4095
+HIGH          = GPIO.HIGH
+LOW           = GPIO.LOW
+
 
 # ------------------------------------------------------------------------
 # Global variables
@@ -289,71 +158,13 @@ MAX_VALUE     = 4095
 
 PINS_3V6 = ["P1_2", "P2_35"]
 PINS_1V8 = ["P1_19", "P1_21", "P1_23", "P1_25", "P1_27", "P2_36"]
-
-# ------------------------------------------------------------------------
-# Functions / Classes
-# ------------------------------------------------------------------------
-
-class Potentiometer():
-    """ Button Class """
-    pin             = None
-    voltage         = None
-    
-    def __init__(self, pin=None, voltage=1.8):
-        """ Initialize variables and set up the potentiometer """
-        if (pin == None):
-            raise ValueError("Pin not provided for Potentiometer()")
-        else:
-            self.pin = pin
-            
-        if pin in PINS_3V6:
-            self.voltage = 3.6
-        else:
-            self.voltage = 1.8
-            
-            if pin not in PINS_1V8:
-                print("WARNING:  Unknown pin {0}.  Setting voltage to 1.8V.".format(pin))
-        
-        # Initialize the hardware components        
-        self._setup()
-    
-    # End def
-    
-    
-    def _setup(self):
-        """ Setup the hardware components. """
-        # Initialize Analog Input
-        ADC.setup()
-        # !!! NEED TO IMPLEMENT !!! #
-        pass 
-        # !!! NEED TO IMPLEMENT !!! #
-
-    # End def
-
-
-    def get_value(self):
-        """ Get the value of the Potentiometer
-        
-           Returns:  Integer in [0, 4095]
-        """
-        # Read raw value from ADC
-
-        # !!! NEED TO IMPLEMENT !!! #
-        return int(ADC.read_raw(self.pin))
-        # !!! NEED TO IMPLEMENT !!! #
-
-    # End def
-    
-    
-    def cleanup(self):
-        """Cleanup the hardware components."""
-        # Nothing to do for ADC
-        pass        
-        
-    # End def
-
-# End class
-
+LED = 'P2_3'
+buzz_LED = 'P2_6'
+step = 5       # Step size
+min =  0        # dimmest value
+max =  100      # brightest value
+brightness = min # Current brightness;
+ 
 
 
 # ------------------------------------------------------------------------
@@ -361,12 +172,10 @@ class Potentiometer():
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import time
 
-    print("Potentiometer Test")
     display = HT16K33(1, 0x70)
-    
     display.set_colon(True)
+    PWM.start(LED, brightness)
 
     # Create instantiation of the potentiometer
     pot = Potentiometer("P1_19")
@@ -374,15 +183,86 @@ if __name__ == '__main__':
     # Use a Keyboard Interrupt (i.e. "Ctrl-C") to exit the test
     print("Use Ctrl-C to Exit")
     
+    
+    # Create instantiation of the button
+    button1 = Button("P2_2")
+    button2 = Button("P2_4")
+    button3 = Button("P2_8")
+    buzzer = Buzzer("P2_1")
+    
+    # set booleans
+    start_timer = False
+    stop_timer = False
+    buzz_on = True
+    
+    def light():
+        PWM.start(LED, brightness)
+        if button1.is_pressed():
+            PWM.set_duty_cycle(LED, 100)
+            time.sleep(0.1)
+                
+        if not button1.is_pressed():
+            PWM.set_duty_cycle(LED, 0)
+            time.sleep(0.1)
+            
+    def buzz():
+        if buzz_on:
+            buzzer.play(880, 1.0, True)       # Play 440Hz for 1 second
+            time.sleep(1.0)   
+        buzzer.cleanup()
+        
+    GPIO.setup(buzz_LED, GPIO.OUT)
+    
     try:
         while(1):
-            # Print potentiometer value
-            value = pot.get_value()
-            if value > 0:
-                set_timer = int(value / 45)
-            display.update(set_timer*100)
-            time.sleep(0.1)
-        
+            light()
+            
+            # if buzz_on:
+            #     GPIO.output(buzz_LED, GPIO.HIGH)
+            # if not buzz_on:
+            #     GPIO.output(buzz_LED, GPIO.LOW)
+            # if button3.is_pressed():
+            #     buzz_on = not buzz_on
+            #     print(buzz_on)
+            #     time.sleep(0.25)
+                
+
+            # before starting timer, get start time, push button2 to start it
+            if not start_timer:
+                display.set_colon(True)
+                # Get potentiometer value
+                value = pot.get_value()
+                if value > 0:
+                    set_timer = int(value / 45) # make value from 0 --> 91 min
+                    display.update(set_timer*100) # show amount of time
+                    time.sleep(0.1)
+                t = set_timer*60 # number of seconds
+                if button2.is_pressed():
+                    start_timer = not start_timer
+                    print(start_timer)
+                    time.sleep(0.1)
+
+            if t and start_timer: 
+                mins, secs = divmod(t, 60) # split into min and sec
+                timer = (mins*100) + secs # show XX min: XX sec
+                display.update(timer) # display time
+                time.sleep(0.25) # make into 1 second at the end
+                t -= 1 
+                
+                
+                if t == 0 and start_timer: # once countdown goes to zero
+                    letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ?"
+                    display.text("done")
+                    buzz()
+                    time.sleep(0.1)
+                    if button2.is_pressed():
+                        start_timer = not start_timer
+                        print(start_timer)
+                        display.clear()
+                        display.set_colon(True)
+                        time.sleep(0.1)
+    
+                
     except KeyboardInterrupt:
         pass
 
