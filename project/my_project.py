@@ -164,6 +164,7 @@ step = 5       # Step size
 min =  0        # dimmest value
 max =  100      # brightest value
 brightness = min # Current brightness;
+
  
 
 
@@ -176,6 +177,7 @@ if __name__ == '__main__':
     display = HT16K33(1, 0x70)
     display.set_colon(True)
     PWM.start(LED, brightness)
+    GPIO.setup(buzz_LED, GPIO.OUT)
 
     # Create instantiation of the potentiometer
     pot = Potentiometer("P1_19")
@@ -193,7 +195,7 @@ if __name__ == '__main__':
     # set booleans
     start_timer = False
     stop_timer = False
-    buzz_on = True
+    buzz_on = False
     
     def light():
         PWM.start(LED, brightness)
@@ -205,44 +207,55 @@ if __name__ == '__main__':
             PWM.set_duty_cycle(LED, 0)
             time.sleep(0.1)
             
-    def buzz():
+    def buzz_light(buzz_on):
+        if button3.is_pressed():
+                buzz_on = not buzz_on
+                time.sleep(0.2)
+                print(buzz_on)
         if buzz_on:
-            buzzer.play(880, 1.0, True)       # Play 440Hz for 1 second
-            time.sleep(1.0)   
+            GPIO.output(buzz_LED, GPIO.HIGH)
+
+        if not buzz_on:
+            GPIO.output(buzz_LED, GPIO.LOW)
+        
+        return buzz_on
+            
+        
+    # end def
+    
+    def buzz():
+        buzzer.play(880, 1.0, True)       # Play 440Hz for 1 second
+        time.sleep(1.0)   
         buzzer.cleanup()
         
-    GPIO.setup(buzz_LED, GPIO.OUT)
+        
     
     try:
         while(1):
             light()
+            buzz_on = buzz_light(buzz_on)
             
-            # if buzz_on:
-            #     GPIO.output(buzz_LED, GPIO.HIGH)
-            # if not buzz_on:
-            #     GPIO.output(buzz_LED, GPIO.LOW)
-            # if button3.is_pressed():
-            #     buzz_on = not buzz_on
-            #     print(buzz_on)
-            #     time.sleep(0.25)
-                
-
+            # Get potentiometer value
+            value = pot.get_value()
+            
             # before starting timer, get start time, push button2 to start it
             if not start_timer:
                 display.set_colon(True)
-                # Get potentiometer value
-                value = pot.get_value()
+                
                 if value > 0:
                     set_timer = int(value / 45) # make value from 0 --> 91 min
                     display.update(set_timer*100) # show amount of time
                     time.sleep(0.1)
-                t = set_timer*60 # number of seconds
                 if button2.is_pressed():
                     start_timer = not start_timer
                     print(start_timer)
                     time.sleep(0.1)
-
-            if t and start_timer: 
+                    
+            t = int(value/45)*60  # number of seconds
+            
+            while t and start_timer: 
+                light()
+                buzz_on = buzz_light(buzz_on)
                 mins, secs = divmod(t, 60) # split into min and sec
                 timer = (mins*100) + secs # show XX min: XX sec
                 display.update(timer) # display time
@@ -250,21 +263,25 @@ if __name__ == '__main__':
                 t -= 1 
                 
                 
-                if t == 0 and start_timer: # once countdown goes to zero
-                    letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ?"
-                    display.text("done")
+            while t == 0 and start_timer: # once countdown goes to zero
+                light()
+                buzz_on = buzz_light(buzz_on)
+                letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ?"
+                display.text("done")
+                if buzz_on:
                     buzz()
+                time.sleep(0.1)
+                if button2.is_pressed():
+                    display.clear()
+                    display.set_colon(True)
                     time.sleep(0.1)
-                    if button2.is_pressed():
-                        start_timer = not start_timer
-                        print(start_timer)
-                        display.clear()
-                        display.set_colon(True)
-                        time.sleep(0.1)
+                    start_timer = not start_timer
+                    print(start_timer)
     
                 
     except KeyboardInterrupt:
         pass
+    GPIO.cleanup()
 
     print("Test Complete")
 
