@@ -50,6 +50,7 @@ import os
 import time
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
+import threading
 
 
 # ------------------------------------------------------------------------
@@ -59,6 +60,7 @@ from timer import HT16K33
 from potentiometer import Potentiometer
 from button import Button
 from buzzer import Buzzer
+# from breathing import Breathing
 
 
 # ------------------------------------------------------------------------
@@ -161,9 +163,8 @@ PINS_1V8 = ["P1_19", "P1_21", "P1_23", "P1_25", "P1_27", "P2_36"]
 LED = 'P2_3'
 buzz_LED = 'P2_6'
 step = 5       # Step size
-min =  0        # dimmest value
-max =  100      # brightest value
-brightness = min # Current brightness;
+# min =  0        # dimmest value
+# max =  100      # brightest value
 
  
 
@@ -176,11 +177,12 @@ if __name__ == '__main__':
 
     display = HT16K33(1, 0x70)
     display.set_colon(True)
-    PWM.start(LED, brightness)
+    PWM.start(LED, 0)
     GPIO.setup(buzz_LED, GPIO.OUT)
 
     # Create instantiation of the potentiometer
-    pot = Potentiometer("P1_19")
+    pot1 = Potentiometer("P1_19")
+    pot2 = Potentiometer("P1_25")
 
     # Use a Keyboard Interrupt (i.e. "Ctrl-C") to exit the test
     print("Use Ctrl-C to Exit")
@@ -192,35 +194,35 @@ if __name__ == '__main__':
     button3 = Button("P2_8")
     buzzer = Buzzer("P2_1")
     
+    # Variables
+    # brightness = 0          # Current brightness (0-100%)
+    # state = "fade_up"       # Initial state: "fade_up", "hold", or "fade_down"
+    # state_start_time = time.time()  # Record when the state started
+    
+    # # Time durations for each state
+    # fade_up_duration = 4  # seconds
+    # hold_duration = 7     # seconds
+    # fade_down_duration = 8  # seconds
+    
     # set booleans
     start_timer = False
     stop_timer = False
     buzz_on = False
     
-    def light():
-        PWM.start(LED, brightness)
-        if button1.is_pressed():
-            PWM.set_duty_cycle(LED, 100)
-            time.sleep(0.1)
-                
-        if not button1.is_pressed():
-            PWM.set_duty_cycle(LED, 0)
-            time.sleep(0.1)
             
     def buzz_light(buzz_on):
         if button3.is_pressed():
-                buzz_on = not buzz_on
-                time.sleep(0.2)
-                print(buzz_on)
+            buzz_on = not buzz_on
+            time.sleep(0.2)
         if buzz_on:
             GPIO.output(buzz_LED, GPIO.HIGH)
+            time.sleep(0.1)
+            return buzz_on
 
         if not buzz_on:
             GPIO.output(buzz_LED, GPIO.LOW)
-        
+            time.sleep(0.1)
         return buzz_on
-            
-        
     # end def
     
     def buzz():
@@ -228,23 +230,43 @@ if __name__ == '__main__':
         time.sleep(1.0)   
         buzzer.cleanup()
         
+    def countdown(t):
+        mins, secs = divmod(t, 60) # split into min and sec
+        timer = (mins*100) + secs # show XX min: XX sec
+        display.update(timer) # display time
+        time.sleep(1) # make into 1 second at the end
+        t -= 1 
+        return t
         
     
     try:
         while(1):
-            light()
+            time.sleep(0.01)
+            # print(button3.is_pressed())
             buzz_on = buzz_light(buzz_on)
+            # if button1.is_pressed():
+            #     time.sleep(0.1)
+            #     Breathing(state_start_time, state, 4, 7, 8)
             
             # Get potentiometer value
-            value = pot.get_value()
+            value = pot1.get_value()
+            
+            # get value for display brightness
+            value2 = pot2.get_value()
+            disp_bright = int(value2/256) # set to be within range of max brightness
+            display.setup(1, disp_bright) # set brightness
             
             # before starting timer, get start time, push button2 to start it
             if not start_timer:
                 display.set_colon(True)
-                
+                buzz_on = buzz_light(buzz_on)
                 if value > 0:
                     set_timer = int(value / 45) # make value from 0 --> 91 min
                     display.update(set_timer*100) # show amount of time
+                    # get value for display brightness
+                    value2 = pot2.get_value()
+                    disp_bright = int(value2/256) # set to be within range of max brightness
+                    display.setup(1, disp_bright) # set brightness
                     time.sleep(0.1)
                 if button2.is_pressed():
                     start_timer = not start_timer
@@ -254,17 +276,20 @@ if __name__ == '__main__':
             t = int(value/45)*60  # number of seconds
             
             while t and start_timer: 
-                light()
                 buzz_on = buzz_light(buzz_on)
                 mins, secs = divmod(t, 60) # split into min and sec
                 timer = (mins*100) + secs # show XX min: XX sec
                 display.update(timer) # display time
-                time.sleep(0.25) # make into 1 second at the end
+                time.sleep(1) # make into 1 second at the end
                 t -= 1 
-                
+                # set brightness for display
+                value2 = pot2.get_value()
+                disp_bright = int(value2/256) # set to be within range of max brightness
+                display.setup(1, disp_bright) # set brightness
+                # if button1.is_pressed():
+                #     Breathing(state_start_time, state, 4, 7, 8)
                 
             while t == 0 and start_timer: # once countdown goes to zero
-                light()
                 buzz_on = buzz_light(buzz_on)
                 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ?"
                 display.text("done")
@@ -277,11 +302,20 @@ if __name__ == '__main__':
                     time.sleep(0.1)
                     start_timer = not start_timer
                     print(start_timer)
+        
+            # if button1.is_pressed():
+            #     print("starting breathe")
+            #     time.sleep(0.1)
+            #     Breathing(state_start_time, state, 4, 7, 8)
+            
     
                 
     except KeyboardInterrupt:
         pass
+    PWM.stop(LED)
+    PWM.cleanup()
     GPIO.cleanup()
+    display.clear()
 
     print("Test Complete")
 
