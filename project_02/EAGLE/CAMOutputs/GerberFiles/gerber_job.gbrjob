@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2024-12-16T04:39:11Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.6.2"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.53,
+        "LayerNumber": 4,
+        "Name": {
+            "ProjectId": "Etch_A_Sketch"
+        },
+        "Owner": "Megan Enriquez <me52@rice.edu>",
+        "Size": {
+            "X": 88.9,
+            "Y": 119.38
+        }
+    }
+}
